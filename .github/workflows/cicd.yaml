@@ -18,18 +18,18 @@ jobs:
     name: Read Cloud Provider Input
     runs-on: ubuntu-latest
 
-    # outputs:
-    #   cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud_provider }}
+    outputs:
+      cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud_provider }}
 
-    # steps:
-    #   - name: Show input value
-    #     run: |
-    #       echo "Cloud provider selected: ${{ inputs.cloud_provider }}"
+    steps:
+      - name: Show input value
+        run: |
+          echo "Cloud provider selected: ${{ inputs.cloud_provider }}"
 
-    #   - name: Set cloud provider as job output
-    #     id: set-cloud-provider
-    #     run: |
-    #       echo "cloud_provider=${{ inputs.cloud_provider }}" >> "$GITHUB_OUTPUT"
+      - name: Set cloud provider as job output
+        id: set-cloud-provider
+        run: |
+          echo "cloud_provider=${{ inputs.cloud_provider }}" >> "$GITHUB_OUTPUT"
 
   deploy-to-aws:
     name: Deploy  to AWS
