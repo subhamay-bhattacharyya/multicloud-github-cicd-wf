@@ -1,4 +1,5 @@
-name: Branch by Cloud Provider
+name: Deploy Cloud Resume Challenge
+run-name: Deploy run by ${{ github.actor }} on ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -17,31 +18,34 @@ jobs:
     name: Read Cloud Provider Input
     runs-on: ubuntu-latest
 
-    outputs:
-      cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud_provider }}
+    # outputs:
+    #   cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud_provider }}
+
+    # steps:
+    #   - name: Show input value
+    #     run: |
+    #       echo "Cloud provider selected: ${{ inputs.cloud_provider }}"
+
+    #   - name: Set cloud provider as job output
+    #     id: set-cloud-provider
+    #     run: |
+    #       echo "cloud_provider=${{ inputs.cloud_provider }}" >> "$GITHUB_OUTPUT"
+
+  deploy-to-aws:
+    name: Deploy  to AWS
+    runs-on: ubuntu-latest
+    needs: read-input
+    if: ${{ needs.read-input.outputs.cloud_provider == 'aws' }}
 
     steps:
-      - name: Show input value
+      - name: Print AWS message
         run: |
-          echo "Cloud provider selected: ${{ inputs.cloud_provider }}"
-
-      - name: Set cloud provider as job output
-        id: set-cloud-provider
-        run: |
-          echo "cloud_provider=${{ inputs.cloud_provider }}" >> "$GITHUB_OUTPUT"
-
-  # aws-branch:
-  #   name: AWS Branch
-  #   runs-on: ubuntu-latest
-  #   needs: read-input
-  #   if: ${{ needs.read-input.outputs.cloud_provider == 'aws' }}
-
-  #   steps:
-  #     - name: Print AWS message
-  #       run: |
-  #         echo "== AWS BRANCH =="
-  #         echo "Running AWS-specific logic here..."
-  #         echo "Later this is where terraform apply for AWS would run."
+          msg="== AWS BRANCH ==
+              Running AWS-specific logic here...
+              Later this is where terraform apply for AWS would run."
+              echo -e "$msg"
+              echo "## AWS Branch" >> $GITHUB_STEP_SUMMARY
+              echo "$msg" >> $GITHUB_STEP_SUMMARY
 
   # gcp-branch:
   #   name: GCP Branch
