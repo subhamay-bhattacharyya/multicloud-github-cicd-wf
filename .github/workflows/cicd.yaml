@@ -37,7 +37,7 @@ jobs:
     name: Deploy infra to AWS
     runs-on: ubuntu-latest
     needs: read-cloud-service-provider
-    if: ${{ needs.read-input.outputs.cloud_provider == 'aws' }}
+    if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'aws' }}
 
     steps:
       - name: Print AWS message
@@ -49,11 +49,16 @@ jobs:
               echo "## AWS Branch" >> $GITHUB_STEP_SUMMARY
               echo "$msg" >> $GITHUB_STEP_SUMMARY
 
+      - name: AWS OIDC Connection
+        id: aws-oidc-connection
+        run: |
+          echo "Setup AWS OIDC Connection"
+         
   deploy-infra-to-gcp:
     name: Deploy infra to GCP
     runs-on: ubuntu-latest
     needs: read-cloud-service-provider
-    if: ${{ needs.read-input.outputs.cloud_provider == 'gcp' }}
+    if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'gcp' }}
 
     steps:
       - name: Print GCP message
@@ -65,12 +70,16 @@ jobs:
               echo "## GCP Branch" >> $GITHUB_STEP_SUMMARY
               echo "$msg" >> $GITHUB_STEP_SUMMARY
 
+      - name: GCP OIDC Connection
+        id: gcp-oidc-connection
+        run: |
+          echo "Setup GCP OIDC Connection"
   
   deploy-infra-to-azure:
     name: Deploy infra to Azure
     runs-on: ubuntu-latest
     needs: read-cloud-service-provider
-    if: ${{ needs.read-input.outputs.cloud_provider == 'azure' }}
+    if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'azure' }}
 
     steps:
       - name: Print Azure message
@@ -81,6 +90,11 @@ jobs:
               echo -e "$msg"
               echo "## Azure Branch" >> $GITHUB_STEP_SUMMARY
               echo "$msg" >> $GITHUB_STEP_SUMMARY
+
+      - name: AWS OIDC Connection
+        id: azure-oidc-connection
+        run: |
+          echo "Setup Azure OIDC Connection"
   # gcp-branch:
   #   name: GCP Branch
   #   runs-on: ubuntu-latest
