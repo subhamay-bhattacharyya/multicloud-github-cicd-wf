@@ -1,0 +1,70 @@
+name: Branch by Cloud Provider
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloud_provider:
+        description: "Target cloud provider"
+        required: true
+        type: choice
+        options:
+          - aws
+          - gcp
+          - azure
+
+jobs:
+  read-input:
+    name: Read Cloud Provider Input
+    runs-on: ubuntu-latest
+
+    outputs:
+      cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud_provider }}
+
+    steps:
+      - name: Show input value
+        run: |
+          echo "Cloud provider selected: ${{ inputs.cloud_provider }}"
+
+      - name: Set cloud provider as job output
+        id: set-cloud-provider
+        run: |
+          echo "cloud_provider=${{ inputs.cloud_provider }}" >> "$GITHUB_OUTPUT"
+
+  # aws-branch:
+  #   name: AWS Branch
+  #   runs-on: ubuntu-latest
+  #   needs: read-input
+  #   if: ${{ needs.read-input.outputs.cloud_provider == 'aws' }}
+
+  #   steps:
+  #     - name: Print AWS message
+  #       run: |
+  #         echo "== AWS BRANCH =="
+  #         echo "Running AWS-specific logic here..."
+  #         echo "Later this is where terraform apply for AWS would run."
+
+  # gcp-branch:
+  #   name: GCP Branch
+  #   runs-on: ubuntu-latest
+  #   needs: read-input
+  #   if: ${{ needs.read-input.outputs.cloud_provider == 'gcp' }}
+
+  #   steps:
+  #     - name: Print GCP message
+  #       run: |
+  #         echo "== GCP BRANCH =="
+  #         echo "Running GCP-specific logic here..."
+  #         echo "Later this is where terraform apply for GCP would run."
+
+  # azure-branch:
+  #   name: Azure Branch
+  #   runs-on: ubuntu-latest
+  #   needs: read-input
+  #   if: ${{ needs.read-input.outputs.cloud_provider == 'azure' }}
+
+  #   steps:
+  #     - name: Print Azure message
+  #       run: |
+  #         echo "== AZURE BRANCH =="
+  #         echo "Running Azure-specific logic here..."
+  #         echo "Later this is where terraform apply for Azure would run."
