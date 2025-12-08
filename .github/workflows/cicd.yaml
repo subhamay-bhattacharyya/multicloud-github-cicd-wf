@@ -14,10 +14,12 @@ on:
           - azure
 
 jobs:
-  read-input:
+  read-cloud-service-provider:
     name: Read Cloud Provider Input
     runs-on: ubuntu-latest
 
+    # 🚫 Prevent workflows from running on feature/* branches
+    if: ${{ !startsWith(github.ref_name, 'feature/') }}
     outputs:
       cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud_provider }}
 
@@ -31,10 +33,10 @@ jobs:
         run: |
           echo "cloud_provider=${{ inputs.cloud_provider }}" >> "$GITHUB_OUTPUT"
 
-  deploy-to-aws:
-    name: Deploy  to AWS
+  deploy-infra-to-aws:
+    name: Deploy infra to AWS
     runs-on: ubuntu-latest
-    needs: read-input
+    needs: read-cloud-service-provider
     if: ${{ needs.read-input.outputs.cloud_provider == 'aws' }}
 
     steps:
@@ -47,6 +49,38 @@ jobs:
               echo "## AWS Branch" >> $GITHUB_STEP_SUMMARY
               echo "$msg" >> $GITHUB_STEP_SUMMARY
 
+  deploy-infra-to-gcp:
+    name: Deploy infra to GCP
+    runs-on: ubuntu-latest
+    needs: read-cloud-service-provider
+    if: ${{ needs.read-input.outputs.cloud_provider == 'gcp' }}
+
+    steps:
+      - name: Print GCP message
+        run: |
+          msg="== GCP BRANCH ==
+              Running GCP-specific logic here...
+              Later this is where terraform apply for GCP would run."
+              echo -e "$msg"
+              echo "## GCP Branch" >> $GITHUB_STEP_SUMMARY
+              echo "$msg" >> $GITHUB_STEP_SUMMARY
+
+  
+  deploy-infra-to-azure:
+    name: Deploy infra to Azure
+    runs-on: ubuntu-latest
+    needs: read-cloud-service-provider
+    if: ${{ needs.read-input.outputs.cloud_provider == 'azure' }}
+
+    steps:
+      - name: Print Azure message
+        run: |
+          msg="== Azure BRANCH ==
+              Running GCP-specific logic here...
+              Later this is where terraform apply for GCP would run."
+              echo -e "$msg"
+              echo "## Azure Branch" >> $GITHUB_STEP_SUMMARY
+              echo "$msg" >> $GITHUB_STEP_SUMMARY
   # gcp-branch:
   #   name: GCP Branch
   #   runs-on: ubuntu-latest
