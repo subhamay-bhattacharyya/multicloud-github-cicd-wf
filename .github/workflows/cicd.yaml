@@ -111,11 +111,10 @@ jobs:
             echo "- Configured Azure OIDC (skeleton step – replace with reusable workflow later)."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  terraform-deploy:
-    name: Terraform validate, plan and deploy (${{ needs.read-cloud-service-provider.outputs.cloud_provider }})
+  terraform-validate:
+    name: Terraform validate (${{ needs.read-cloud-service-provider.outputs.cloud_provider }})
     runs-on: ubuntu-latest
     needs:
-      - read-cloud-service-provider
       - configure-oidc
     timeout-minutes: 45
 
@@ -126,71 +125,104 @@ jobs:
       - name: Show provider and stage
         run: |
           set -euo pipefail
-          echo "Starting Terraform pipeline for provider: ${CLOUD_PROVIDER}"
+          echo "Starting Terraform validate for provider: ${CLOUD_PROVIDER}"
           echo "Uppercase provider (bash): ${CLOUD_PROVIDER^^}"
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  terraform-plan:
+    name: Terraform validate (${{ needs.read-cloud-service-provider.outputs.cloud_provider }})
+    runs-on: ubuntu-latest
+    needs:
+      - terraform-validate
+    timeout-minutes: 45
 
-      # =========================
-      # AWS BRANCH
-      # =========================
-      - name: Terraform – AWS path
-        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'aws' }}
+    env:
+      CLOUD_PROVIDER: ${{ needs.read-cloud-service-provider.outputs.cloud_provider }}
+
+    steps:
+      - name: Show provider and stage
         run: |
           set -euo pipefail
-          echo "== TERRAFORM PIPELINE – AWS =="
-          echo "This is where AWS-specific terraform init/plan/apply would run."
+          echo "Starting Terraform plan for provider: ${CLOUD_PROVIDER}"
+          echo "Uppercase provider (bash): ${CLOUD_PROVIDER^^}"
 
-          {
-            echo "## Terraform – AWS"
-            echo ""
-            echo "- Provider: \`AWS\`"
-            echo "- Actions (skeleton):"
-            echo "  - \`terraform init\` for AWS backend"
-            echo "  - \`terraform validate\`"
-            echo "  - \`terraform plan\`"
-            echo "  - \`terraform apply\` or reusable AWS deploy workflow"
-          } >> "$GITHUB_STEP_SUMMARY"
+  terraform-deploy:
+    name: Terraform deploy (${{ needs.read-cloud-service-provider.outputs.cloud_provider }})
+    runs-on: ubuntu-latest
+    needs:
+      - terraform-plan
+    timeout-minutes: 45
 
-      # =========================
-      # GCP BRANCH
-      # =========================
-      - name: Terraform – GCP path
-        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'gcp' }}
+    env:
+      CLOUD_PROVIDER: ${{ needs.read-cloud-service-provider.outputs.cloud_provider }}
+
+    steps:
+      - name: Show provider and stage
         run: |
           set -euo pipefail
-          echo "== TERRAFORM PIPELINE – GCP =="
-          echo "This is where GCP-specific terraform init/plan/apply would run."
+          echo "Starting Deploy plan for provider: ${CLOUD_PROVIDER}"
+          echo "Uppercase provider (bash): ${CLOUD_PROVIDER^^}"
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
 
-          {
-            echo "## Terraform – GCP"
-            echo ""
-            echo "- Provider: \`GCP\`"
-            echo "- Actions (skeleton):"
-            echo "  - \`terraform init\` for GCS backend"
-            echo "  - \`terraform validate\`"
-            echo "  - \`terraform plan\`"
-            echo "  - \`terraform apply\` or reusable GCP deploy workflow"
-          } >> "$GITHUB_STEP_SUMMARY"
+      # # =========================
+      # # AWS BRANCH
+      # # =========================
+      # - name: Terraform – AWS path
+      #   if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'aws' }}
+      #   run: |
+      #     set -euo pipefail
+      #     echo "== TERRAFORM PIPELINE – AWS =="
+      #     echo "This is where AWS-specific terraform init/plan/apply would run."
 
-      # =========================
-      # AZURE BRANCH
-      # =========================
-      - name: Terraform – Azure path
-        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'azure' }}
-        run: |
-          set -euo pipefail
-          echo "== TERRAFORM PIPELINE – AZURE =="
-          echo "This is where Azure-specific terraform init/plan/apply would run."
+      #     {
+      #       echo "## Terraform – AWS"
+      #       echo ""
+      #       echo "- Provider: \`AWS\`"
+      #       echo "- Actions (skeleton):"
+      #       echo "  - \`terraform init\` for AWS backend"
+      #       echo "  - \`terraform validate\`"
+      #       echo "  - \`terraform plan\`"
+      #       echo "  - \`terraform apply\` or reusable AWS deploy workflow"
+      #     } >> "$GITHUB_STEP_SUMMARY"
 
-          {
-            echo "## Terraform – Azure"
-            echo ""
-            echo "- Provider: \`AZURE\`"
-            echo "- Actions (skeleton):"
-            echo "  - \`terraform init\` for Azure backend"
-            echo "  - \`terraform validate\`"
-            echo "  - \`terraform plan\`"
-            echo "  - \`terraform apply\` or reusable Azure deploy workflow"
-          } >> "$GITHUB_STEP_SUMMARY"
+      # # =========================
+      # # GCP BRANCH
+      # # =========================
+      # - name: Terraform – GCP path
+      #   if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'gcp' }}
+      #   run: |
+      #     set -euo pipefail
+      #     echo "== TERRAFORM PIPELINE – GCP =="
+      #     echo "This is where GCP-specific terraform init/plan/apply would run."
+
+      #     {
+      #       echo "## Terraform – GCP"
+      #       echo ""
+      #       echo "- Provider: \`GCP\`"
+      #       echo "- Actions (skeleton):"
+      #       echo "  - \`terraform init\` for GCS backend"
+      #       echo "  - \`terraform validate\`"
+      #       echo "  - \`terraform plan\`"
+      #       echo "  - \`terraform apply\` or reusable GCP deploy workflow"
+      #     } >> "$GITHUB_STEP_SUMMARY"
+
+      # # =========================
+      # # AZURE BRANCH
+      # # =========================
+      # - name: Terraform – Azure path
+      #   if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'azure' }}
+      #   run: |
+      #     set -euo pipefail
+      #     echo "== TERRAFORM PIPELINE – AZURE =="
+      #     echo "This is where Azure-specific terraform init/plan/apply would run."
+
+      #     {
+      #       echo "## Terraform – Azure"
+      #       echo ""
+      #       echo "- Provider: \`AZURE\`"
+      #       echo "- Actions (skeleton):"
+      #       echo "  - \`terraform init\` for Azure backend"
+      #       echo "  - \`terraform validate\`"
+      #       echo "  - \`terraform plan\`"
+      #       echo "  - \`terraform apply\` or reusable Azure deploy workflow"
+      #     } >> "$GITHUB_STEP_SUMMARY"
