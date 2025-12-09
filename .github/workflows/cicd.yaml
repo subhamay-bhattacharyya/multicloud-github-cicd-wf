@@ -62,7 +62,7 @@ jobs:
 
         
   terraform-validate:
-    name: Validate the Terraform Config files
+    name: Validate Terraform Config for ${{ github.event.inputs.cloud_provider }}
     runs-on: ubuntu-latest
     needs: read-cloud-service-provider
 
