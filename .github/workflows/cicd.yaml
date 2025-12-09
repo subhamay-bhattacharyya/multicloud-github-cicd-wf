@@ -1,6 +1,6 @@
 name: Deploy Cloud Resume Challenge
 run-name: >
-  Deploy to ${{ github.event.inputs.cloud_provider }} by ${{ github.actor }} on ${{ github.ref_name }}
+  Deploy to ${{ upper(github.event.inputs['cloud-provider']) }} by ${{ github.actor }} on ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true   # ✅ usually what you want for deploys
 
 defaults:
   run:
@@ -37,18 +37,18 @@ jobs:
     timeout-minutes: 5
 
     outputs:
-      cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud-provider }}
+      cloud_provider: ${{ steps.set-cloud-provider.outputs.cloud_provider }}  # ✅ use underscore
 
     steps:
       - name: Show input value
         run: |
-          echo "Cloud provider selected: ${{ github.event.inputs.cloud-provider }}"
+          echo "Cloud provider selected: ${{ github.event.inputs['cloud-provider'] }}"
 
       - name: Set cloud provider as job output
         id: set-cloud-provider
         run: |
           set -euo pipefail
-          echo "cloud_provider=${{ github.event.inputs.cloud_provider }}" >> "$GITHUB_OUTPUT"
+          echo "cloud_provider=${{ github.event.inputs['cloud-provider'] }}" >> "$GITHUB_OUTPUT"
 
       - name: Add summary – selected cloud provider
         run: |
@@ -57,43 +57,23 @@ jobs:
             echo ""
             echo "- **Ref**: \`${{ github.ref_name }}\`"
             echo "- **Actor**: \`${{ github.actor }}\`"
-            echo "- **Cloud provider**: \`${{ github.event.inputs.cloud_provider }}\`"
+            echo "- **Cloud provider**: \`${{ upper(github.event.inputs['cloud-provider']) }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-        
-  terraform-validate:
-    name: Terraform Validate (${{ github.event.inputs.cloud-provider }})
+  configure-oidc:
+    name: Configure OIDC (${{ upper(needs.read-cloud-service-provider.outputs.cloud_provider) }})
     runs-on: ubuntu-latest
     needs: read-cloud-service-provider
-
-    timeout-minutes: 5
-
-    steps:
-      - name: Terraform Validate
-        id: tf-validate
-        uses: subhamay-bhattacharyya-gha/tf-validate-action@feature/GHA-0032-implement-terraform-state
-        with:
-          terraform-dir: tf
-          soft-fail: "false"
-
-      - name: Display Status
-        run: |
-          echo "Validation Passed: ${{ steps.tf-validate.outputs.valid }}"
-          
-  configure-oidc:
-    name: Configure OIDC (${{ github.event.inputs.cloud-provider }})
-    runs-on: ubuntu-latest
-    needs: terraform-validate
     timeout-minutes: 10
 
     steps:
       - name: Show selected provider (from previous job)
         run: |
           set -euo pipefail
-          echo "Configuring OIDC for provider: ${{ needs.read-cloud-service-provider.outputs.cloud-provider }}"
+          echo "Configuring OIDC for provider: ${{ needs.read-cloud-service-provider.outputs.cloud_provider }}"
 
       - name: Configure AWS OIDC
-        if: ${{ needs.read-cloud-service-provider.outputs.cloud-provider == 'aws' }}
+        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'aws' }}
         run: |
           set -euo pipefail
           echo "== AWS OIDC CONFIGURATION =="
@@ -105,7 +85,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure GCP OIDC
-        if: ${{ needs.read-cloud-service-provider.outputs.cloud-provider == 'gcp' }}
+        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'gcp' }}
         run: |
           set -euo pipefail
           echo "== GCP OIDC CONFIGURATION =="
@@ -117,7 +97,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure Azure OIDC
-        if: ${{ needs.read-cloud-service-provider.outputs.cloud-provider == 'azure' }}
+        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'azure' }}
         run: |
           set -euo pipefail
           echo "== AZURE OIDC CONFIGURATION =="
@@ -129,58 +109,67 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   terraform-deploy:
-    name: Terraform validate, plan and deploy
+    name: Terraform validate, plan and deploy (${{ upper(needs.read-cloud-service-provider.outputs.cloud_provider) }})
     runs-on: ubuntu-latest
     needs:
       - read-cloud-service-provider
-      - terraform-validate
       - configure-oidc
     timeout-minutes: 45
 
     env:
-      CLOUD_PROVIDER: ${{ needs.read-cloud-service-provider.outputs.cloud-provider }}
+      CLOUD_PROVIDER: ${{ needs.read-cloud-service-provider.outputs.cloud_provider }}
 
     steps:
       - name: Show provider and stage
         run: |
           set -euo pipefail
           echo "Starting Terraform pipeline for provider: ${CLOUD_PROVIDER}"
+          echo "Uppercase provider (bash): ${CLOUD_PROVIDER^^}"
 
-      - name: Checkout repository (placeholder)
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Terraform validate (skeleton)
+      # =========================
+      # AWS BRANCH
+      # =========================
+      - name: Terraform – AWS path
+        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'aws' }}
         run: |
           set -euo pipefail
-          echo "== TERRAFORM VALIDATE =="
-          echo "This is where 'terraform init' and 'terraform validate' would run for ${CLOUD_PROVIDER}."
+          echo "== TERRAFORM PIPELINE – AWS =="
+          echo "This is where AWS-specific terraform init/plan/apply would run."
+
           {
-            echo "## Terraform – Validate"
+            echo "## Terraform – AWS"
             echo ""
-            echo "- Provider: \`${CLOUD_PROVIDER}\`"
-            echo "- Action: \`terraform init\` and \`terraform validate\` (skeleton)"
+            echo "- Provider: \`AWS\`"
+            echo "- Actions (skeleton):"
+            echo "  - \`terraform init\` for AWS backend"
+            echo "  - \`terraform validate\`"
+            echo "  - \`terraform plan\`"
+            echo "  - \`terraform apply\` or reusable AWS deploy workflow"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Terraform plan (skeleton)
+      # =========================
+      # GCP BRANCH
+      # =========================
+      - name: Terraform – GCP path
+        if: ${{ needs.read-cloud-service-provider.outputs.cloud_provider == 'gcp' }}
         run: |
           set -euo pipefail
-          echo "== TERRAFORM PLAN =="
-          echo "This is where 'terraform plan' would run for ${CLOUD_PROVIDER}."
+          echo "== TERRAFORM PIPELINE – GCP =="
+          echo "This is where GCP-specific terraform init/plan/apply would run."
+
           {
-            echo "## Terraform – Plan"
+            echo "## Terraform – GCP"
             echo ""
-            echo "- Provider: \`${CLOUD_PROVIDER}\`"
-            echo "- Action: \`terraform plan\` (skeleton)"
+            echo "- Provider: \`GCP\`"
+            echo "- Actions (skeleton):"
+            echo "  - \`terraform init\` for GCS backend"
+            echo "  - \`terraform validate\`"
+            echo "  - \`terraform plan\`"
+            echo "  - \`terraform apply\` or reusable GCP deploy workflow"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Terraform apply / deploy (skeleton)
-        run: |
-          set -euo pipefail
-          echo "== TERRAFORM APPLY / DEPLOY =="
-          echo "This is where 'terraform apply' or your reusable deploy workflow would run for ${CLOUD_PROVIDER}."
-          {
-            echo "## Terraform – Deploy"
-            echo ""
-            echo "- Provider: \`${CLOUD_PROVIDER}\`"
-            echo "- Action: \`terraform apply\` / reusable deploy workflow (skeleton)"
-          } >> "$GITHUB_STEP_SUMMARY"
+      # =========================
+      # AZURE BRANCH
