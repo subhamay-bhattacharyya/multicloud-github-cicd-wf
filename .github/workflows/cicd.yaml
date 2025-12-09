@@ -70,8 +70,15 @@ jobs:
 
     steps:
       - name: Terraform Validate
+        id: tf-validate
+        uses: subhamay-bhattacharyya-gha/tf-validate-action@feature/GHA-0032-implement-terraform-state
+        with:
+          terraform-dir: tf
+          soft-fail: "false"
+
+      - name: Display Status
         run: |
-          echo "Terraform validate"
+          echo "Validation Passed: ${{ steps.tf-validate.outputs.valid }}"
           
   configure-oidc:
     name: Configure OIDC (${{ github.event.inputs.cloud_provider }})
