@@ -28,7 +28,7 @@ defaults:
 
 jobs:
   read-cloud-service-provider:
-    name: Read Cloud Provider Input
+    name: Read Cloud Provider
     runs-on: ubuntu-latest
 
     # 🚫 Prevent workflows from running on feature/* branches
