@@ -10,9 +10,9 @@ on:
         required: true
         type: choice
         options:
-          - aws
-          - gcp
-          - azure
+          - AWS
+          - GCP
+          - Azure
 
 permissions:
   id-token: write      # needed for OIDC
@@ -53,20 +53,20 @@ jobs:
       - name: Add summary – selected cloud provider
         run: |
           set -euo pipefail
-          CP="${{ github.event.inputs['cloud-provider'] }}"
-          CP_UPPER="${CP^^}"
+          CLOUD_PROVIDER="${{ github.event.inputs['cloud-provider'] }}"
           {
             echo "## Deploy Cloud Resume Challenge"
             echo ""
             echo "- **Ref**: \`${{ github.ref_name }}\`"
             echo "- **Actor**: \`${{ github.actor }}\`"
-            echo "- **Cloud provider**: \`${CP_UPPER}\`"
+            echo "- **Cloud provider**: \`${CLOUD_PROVIDER}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   configure-oidc:
     name: Configure OIDC (${{ github.event.inputs['cloud-provider'] }})
     runs-on: ubuntu-latest
-    needs: read-cloud-service-provider
+    needs: 
+    -  read-cloud-service-provider
     timeout-minutes: 10
 
     steps:
@@ -115,6 +115,7 @@ jobs:
     name: Terraform validate (${{ needs.read-cloud-service-provider.outputs.cloud_provider }})
     runs-on: ubuntu-latest
     needs:
+      - read-cloud-service-provider
       - configure-oidc
     timeout-minutes: 45
 
@@ -126,12 +127,12 @@ jobs:
         run: |
           set -euo pipefail
           echo "Starting Terraform validate for provider: ${CLOUD_PROVIDER}"
-          echo "Uppercase provider (bash): ${CLOUD_PROVIDER^^}"
 
   terraform-plan:
     name: Terraform validate (${{ needs.read-cloud-service-provider.outputs.cloud_provider }})
     runs-on: ubuntu-latest
     needs:
+      - read-cloud-service-provider
       - terraform-validate
     timeout-minutes: 45
 
@@ -143,12 +144,12 @@ jobs:
         run: |
           set -euo pipefail
           echo "Starting Terraform plan for provider: ${CLOUD_PROVIDER}"
-          echo "Uppercase provider (bash): ${CLOUD_PROVIDER^^}"
 
   terraform-deploy:
     name: Terraform deploy (${{ needs.read-cloud-service-provider.outputs.cloud_provider }})
     runs-on: ubuntu-latest
     needs:
+      - read-cloud-service-provider
       - terraform-plan
     timeout-minutes: 45
 
@@ -160,7 +161,6 @@ jobs:
         run: |
           set -euo pipefail
           echo "Starting Deploy plan for provider: ${CLOUD_PROVIDER}"
-          echo "Uppercase provider (bash): ${CLOUD_PROVIDER^^}"
       # - name: Checkout repository
       #   uses: actions/checkout@v4
 
